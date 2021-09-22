@@ -1,4 +1,4 @@
-// #![no_std]
+#![no_std]
 #![deny(missing_debug_implementations)]
 
 extern crate alloc;
