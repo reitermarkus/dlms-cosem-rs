@@ -1,6 +1,8 @@
 use core::convert::TryFrom;
 use core::fmt;
 use alloc::{string::String, vec::Vec};
+#[cfg(feature = "serde")]
+use alloc::string::ToString;
 
 use nom::{
   IResult,

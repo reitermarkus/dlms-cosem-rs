@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use alloc::string::ToString;
+
 use nom::{IResult, sequence::tuple, number::complete::u8};
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
