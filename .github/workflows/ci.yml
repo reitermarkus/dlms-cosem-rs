@@ -20,6 +20,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --no-default-features
+      - name: build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-features
       - name: test
         uses: actions-rs/cargo@v1
         with:
