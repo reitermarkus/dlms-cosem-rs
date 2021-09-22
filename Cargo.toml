@@ -1,0 +1,19 @@
+[package]
+name = "dlms_cosem"
+version = "0.1.0"
+edition = "2018"
+authors = ["Markus Reiter <me@reitermark.us>"]
+license = "MIT OR Apache-2.0"
+description = "A `no_std` library for parsing DLMS/COSEM messages."
+documentation = "https://docs.rs/dlms_cosem"
+repository = "https://github.com/reitermarkus/dlms-cosem-rs"
+homepage = "https://github.com/reitermarkus/dlms-cosem-rs"
+
+[dependencies]
+aes = "0.7.5"
+aes-gcm = "0.9.4"
+cipher = "0.3"
+derive-try-from-primitive = "1.0"
+mbusparse = { version = "0.1.1" }
+nom = "7.0"
+serde = { version = "1.0", optional = true }
