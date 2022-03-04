@@ -4,7 +4,7 @@
   ],
   "packageRules": [
     {
-      "matchPackagePatterns": ["aes", "cipher"],
+      "matchPackagePatterns": ["aes", "aes-gcm", "cipher"],
       "groupName": "aes"
     }
   ]
