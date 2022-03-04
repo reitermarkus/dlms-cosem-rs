@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use aes::Aes128;
 use aes_gcm::Aes128Gcm;
 use aes_gcm::aead::{NewAead, AeadInPlace};
-use cipher::BlockCipherKey;
+use cipher::Key;
 use nom::{
   IResult,
   bytes::streaming::tag,
@@ -23,7 +23,7 @@ pub struct GeneralGloCiphering {
 }
 
 impl GeneralGloCiphering {
-  pub fn decrypt(mut self, key: &BlockCipherKey<Aes128>) -> Result<Vec<u8>, aes_gcm::Error> {
+  pub fn decrypt(mut self, key: &Key<Aes128>) -> Result<Vec<u8>, aes_gcm::Error> {
     if self.security_control.encryption() {
       let cipher = Aes128Gcm::new(key);
 
