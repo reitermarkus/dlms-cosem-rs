@@ -16,5 +16,5 @@ aes-gcm = "0.9"
 cipher = "0.3"
 derive-try-from-primitive = "1.0"
 mbusparse = { version = "0.1" }
-nom = "7.0"
+nom = "7.1"
 serde = { version = "1.0", features = ["derive"], optional = true }
