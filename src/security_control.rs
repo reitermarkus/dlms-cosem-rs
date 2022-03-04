@@ -20,17 +20,15 @@ impl fmt::Debug for SecurityControl {
 }
 
 impl SecurityControl {
-  pub fn parse(input: &[u8]) -> IResult<&[u8], Self> {
-    let (input, security_control) = u8(input)?;
-    Ok((input, Self { security_control }))
-  }
-}
-
-impl SecurityControl {
   const COMPRESSION_BIT: u8 =    0b10000000;
   const BROADCAST_BIT: u8 =      0b01000000;
   const ENCRYPTION_BIT: u8 =     0b00100000;
   const AUTHENTICATION_BIT: u8 = 0b00010000;
+
+  pub fn parse(input: &[u8]) -> IResult<&[u8], Self> {
+    let (input, security_control) = u8(input)?;
+    Ok((input, Self { security_control }))
+  }
 
   pub fn suite_id(&self) -> u8 {
     self.security_control & 0b00001111
