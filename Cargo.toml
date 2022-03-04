@@ -11,9 +11,9 @@ repository = "https://github.com/reitermarkus/dlms-cosem-rs"
 homepage = "https://github.com/reitermarkus/dlms-cosem-rs"
 
 [dependencies]
-aes = "0.7"
+aes = "0.8"
 aes-gcm = "0.9"
-cipher = "0.3"
+cipher = "0.4"
 derive-try-from-primitive = "1.0"
 mbusparse = { version = "0.1" }
 nom = "7.1"
