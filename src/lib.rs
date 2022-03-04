@@ -38,7 +38,7 @@ use general_glo_ciphering::GeneralGloCiphering;
 mod obis_code;
 pub use obis_code::ObisCode;
 mod security_control;
-use security_control::SecurityControl;
+pub use security_control::SecurityControl;
 mod unit;
 pub use unit::Unit;
 
