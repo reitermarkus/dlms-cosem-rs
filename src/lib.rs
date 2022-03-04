@@ -12,7 +12,7 @@ use core::mem;
 use core::fmt;
 
 use aes::Aes128;
-use cipher::BlockCipherKey;
+use cipher::Key;
 use nom::{
   IResult,
   Finish,
@@ -76,11 +76,11 @@ impl<I> nom::error::ParseError<I> for Error {
 
 #[derive(Debug)]
 pub struct Dlms {
-  key: BlockCipherKey<Aes128>,
+  key: Key<Aes128>,
 }
 
 /// Parse an `Apdu` from an unsegmented or multiple segmented M-Bus `Telegram`s.
-fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &BlockCipherKey<Aes128>) -> IResult<&'i [Telegram<'i>], Apdu, Error> {
+fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &Key<Aes128>) -> IResult<&'i [Telegram<'i>], Apdu, Error> {
   let mut payload = Vec::new();
   let mut current_segment = 0;
   let mut len = 0;
@@ -137,7 +137,7 @@ fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &BlockCipherKey<Aes128>) -> IR
 }
 
 impl Dlms {
-  pub fn new(key: impl Into<BlockCipherKey<Aes128>>) -> Self {
+  pub fn new(key: impl Into<Key<Aes128>>) -> Self {
     Dlms { key: key.into() }
   }
 
@@ -165,7 +165,7 @@ pub enum Apdu {
 }
 
 impl Apdu {
-  pub fn parse_encrypted<'i>(input: &'i [u8], key: &BlockCipherKey<Aes128>) -> IResult<&'i [u8], Self, Error> {
+  pub fn parse_encrypted<'i>(input: &'i [u8], key: &Key<Aes128>) -> IResult<&'i [u8], Self, Error> {
     let (input, apdu) = Self::parse(input).map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
 
     let apdu = match apdu {
