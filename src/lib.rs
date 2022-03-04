@@ -247,13 +247,10 @@ impl Register {
     if let Some(data) = input.get(0) {
       match data {
         Data::Structure(data) if data.len() == 2 => {
-          match (&data[0], &data[1]) {
-            (Data::Integer(ref scaler), Data::Enum(ref unit)) => {
-              if *scaler != 0x00 || *unit != 0xff {
-                return Ok((&input[1..], (*scaler, *unit)))
-              }
-            },
-            _ => (),
+          if let (Data::Integer(ref scaler), Data::Enum(ref unit)) = (&data[0], &data[1]) {
+            if *scaler != 0x00 || *unit != 0xff {
+              return Ok((&input[1..], (*scaler, *unit)))
+            }
           }
         },
         _ => (),
