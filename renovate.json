@@ -1,11 +1,4 @@
 {
-  "extends": [
-    "config:base"
-  ],
-  "packageRules": [
-    {
-      "matchPackagePatterns": ["aes", "aes-gcm", "cipher"],
-      "groupName": "aes"
-    }
-  ]
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>reitermarkus/.github"]
 }
