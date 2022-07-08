@@ -1,8 +1,5 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_debug_implementations)]
-
-#[cfg(feature = "std")]
-extern crate std;
 
 extern crate alloc;
 use alloc::collections::btree_map::BTreeMap;
