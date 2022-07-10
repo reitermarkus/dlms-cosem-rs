@@ -18,8 +18,11 @@ impl Default for MBusDataLinkLayer {
   }
 }
 
-impl<'i> MBusDataLinkLayer {
-  fn parse_mbus(&self, input: &'i [Telegram<'i>]) -> IResult<&'i [Telegram<'i>], Vec<u8>, Error> {
+impl MBusDataLinkLayer {
+  fn parse_mbus<'i, 'f>(
+    &self,
+    input: &'i [Telegram<'f>],
+  ) -> IResult<&'i [Telegram<'f>], Vec<u8>, Error> {
     let mut payload = Vec::new();
     let mut current_segment = 0;
     let mut len = 0;
@@ -81,12 +84,8 @@ impl<'i> MBusDataLinkLayer {
   }
 }
 
-impl<'i> DlmsDataLinkLayer<'i> for MBusDataLinkLayer {
-  type Input = &'i [Telegram<'i>];
-  type Output = &'i [Telegram<'i>];
-  type FrameOutput = Vec<u8>;
-
-  fn next_frame(&self, input: &'i [Telegram<'i>]) -> Result<(&'i [Telegram<'i>], Vec<u8>), Error> {
+impl<'i, 'f> DlmsDataLinkLayer<&'i [Telegram<'f>], &'i [Telegram<'f>], Vec<u8>> for MBusDataLinkLayer {
+  fn next_frame(&self, input: &'i [Telegram<'f>]) -> Result<(&'i [Telegram<'f>], Vec<u8>), Error> {
     map_nom_error(self.parse_mbus(input))
   }
 }
