@@ -36,6 +36,8 @@ mod security_control;
 pub use security_control::SecurityControl;
 mod unit;
 pub use unit::Unit;
+#[cfg(feature = "hdlcparse")]
+pub mod hdlc;
 #[cfg(feature = "mbusparse")]
 pub mod mbus;
 
@@ -71,31 +73,28 @@ impl<I> nom::error::ParseError<I> for Error {
   }
 }
 
-pub trait DlmsDataLinkLayer<'i> {
-  type Input;
-  type Output;
-  type FrameOutput;
-  fn next_frame(&self, input: Self::Input) -> Result<(Self::Output, Self::FrameOutput), Error>;
+pub trait DlmsDataLinkLayer<I, O, F> {
+  fn next_frame(&self, input: I) -> Result<(O, F), Error>;
 }
 
 #[derive(Debug)]
-pub struct Dlms<DLL> {
+pub struct Dlms<Dll> {
   key: Key<Aes128>,
-  data_link_layer: DLL,
+  data_link_layer: Dll,
 }
 
-impl<DLL> Dlms<DLL> {
-  pub fn new(key: impl Into<Key<Aes128>>, data_link_layer: DLL) -> Self {
+impl<Dll> Dlms<Dll> {
+  pub fn new(key: impl Into<Key<Aes128>>, data_link_layer: Dll) -> Self {
     Dlms {
       key: key.into(),
       data_link_layer,
     }
   }
 
-  pub fn decrypt<'i>(&self, input: DLL::Input) -> Result<(DLL::Output, ObisMap), Error>
+  pub fn decrypt<'i, I, O, F>(&self, input: I) -> Result<(O, ObisMap), Error>
   where
-    DLL: DlmsDataLinkLayer<'i>,
-    <DLL as DlmsDataLinkLayer<'i>>::FrameOutput: Borrow<[u8]>,
+    Dll: DlmsDataLinkLayer<I, O, F>,
+    F: Borrow<[u8]>,
   {
     let (output, apdu) = self.decrypt_apdu(input)?;
 
@@ -104,10 +103,10 @@ impl<DLL> Dlms<DLL> {
     Ok((output, obis))
   }
 
-  pub fn decrypt_apdu<'i>(&self, input: DLL::Input) -> Result<(DLL::Output, Apdu), Error>
+  pub fn decrypt_apdu<'i, I, O, F>(&self, input: I) -> Result<(O, Apdu), Error>
   where
-    DLL: DlmsDataLinkLayer<'i>,
-    <DLL as DlmsDataLinkLayer<'i>>::FrameOutput: Borrow<[u8]>,
+    Dll: DlmsDataLinkLayer<I, O, F>,
+    F: Borrow<[u8]>,
   {
     let (output, frame) = self.data_link_layer.next_frame(input)?;
     let (_, apdu) = map_nom_error(all_consuming(complete(|input| {

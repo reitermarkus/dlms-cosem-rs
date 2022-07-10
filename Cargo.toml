@@ -15,10 +15,11 @@ aes = "0.8.0"
 aes-gcm = "0.9.0"
 cipher = "0.4.0"
 derive-try-from-primitive = "1.0"
-mbusparse = { version = "0.1", default-features = false }
+mbusparse = { version = "0.1", default-features = false, optional = true }
+hdlcparse = { git = "https://github.com/leifhelm/hdlcparse", default-features = false, features = ["llc"], optional = true }
 nom = { version = "7.1", default-features = false, features = ["alloc"] }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [features]
-default = ["std"]
-std = ["serde?/std", "nom/std", "mbusparse/std"]
+default = ["std", "mbusparse", "hdlcparse"]
+std = ["serde?/std", "nom/std"]
