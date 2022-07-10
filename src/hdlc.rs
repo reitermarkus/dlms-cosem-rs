@@ -6,7 +6,7 @@ use hdlcparse::{
 
 use crate::{DlmsDataLinkLayer, Error};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct HdlcDataLinkLayer {
   is_server: bool,
 }
@@ -22,17 +22,11 @@ impl HdlcDataLinkLayer {
   }
 }
 
-impl Default for HdlcDataLinkLayer {
-  fn default() -> Self {
-    Self { is_server: false }
-  }
-}
-
 impl<'i> DlmsDataLinkLayer<&'i [HdlcFrame<'i>], &'i [HdlcFrame<'i>], Cow<'i, [u8]>>
   for HdlcDataLinkLayer
 {
   fn next_frame(&self, frames: &'i [HdlcFrame<'i>]) -> Result<(&'i [HdlcFrame<'i>], Cow<'i, [u8]>), Error> {
-    if frames.len() == 0 {
+    if frames.is_empty() {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;

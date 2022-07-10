@@ -9,14 +9,8 @@ use alloc::vec::Vec;
 use mbusparse::Telegram;
 use nom::{sequence::tuple, IResult};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MBusDataLinkLayer {}
-
-impl Default for MBusDataLinkLayer {
-  fn default() -> Self {
-    Self {}
-  }
-}
 
 impl MBusDataLinkLayer {
   fn parse_mbus<'i, 'f>(

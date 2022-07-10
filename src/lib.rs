@@ -91,7 +91,7 @@ impl<Dll> Dlms<Dll> {
     }
   }
 
-  pub fn decrypt<'i, I, O, F>(&self, input: I) -> Result<(O, ObisMap), Error>
+  pub fn decrypt<I, O, F>(&self, input: I) -> Result<(O, ObisMap), Error>
   where
     Dll: DlmsDataLinkLayer<I, O, F>,
     F: Borrow<[u8]>,
@@ -103,7 +103,7 @@ impl<Dll> Dlms<Dll> {
     Ok((output, obis))
   }
 
-  pub fn decrypt_apdu<'i, I, O, F>(&self, input: I) -> Result<(O, Apdu), Error>
+  pub fn decrypt_apdu<I, O, F>(&self, input: I) -> Result<(O, Apdu), Error>
   where
     Dll: DlmsDataLinkLayer<I, O, F>,
     F: Borrow<[u8]>,
