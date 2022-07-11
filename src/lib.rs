@@ -2,6 +2,7 @@
 #![deny(missing_debug_implementations)]
 
 extern crate alloc;
+use alloc::borrow::Cow;
 use alloc::collections::btree_map::BTreeMap;
 
 use core::borrow::Borrow;
@@ -73,42 +74,36 @@ impl<I> nom::error::ParseError<I> for Error {
   }
 }
 
-pub trait DlmsDataLinkLayer<I, O, F> {
-  fn next_frame(&self, input: I) -> Result<(O, F), Error>;
+pub trait DlmsDataLinkLayer<'i, I> {
+  fn next_frame(input: I) -> Result<(I, Cow<'i, [u8]>), Error>;
 }
 
 #[derive(Debug)]
-pub struct Dlms<Dll> {
+pub struct Dlms {
   key: Key<Aes128>,
-  data_link_layer: Dll,
 }
 
-impl<Dll> Dlms<Dll> {
-  pub fn new(key: impl Into<Key<Aes128>>, data_link_layer: Dll) -> Self {
-    Dlms {
-      key: key.into(),
-      data_link_layer,
-    }
+impl Dlms {
+  pub fn new(key: impl Into<Key<Aes128>>) -> Self {
+    Dlms { key: key.into() }
   }
 
-  pub fn decrypt<I, O, F>(&self, input: I) -> Result<(O, ObisMap), Error>
+  pub fn decrypt<'i, Dll, I>(&self, input: I) -> Result<(I, ObisMap), Error>
   where
-    Dll: DlmsDataLinkLayer<I, O, F>,
-    F: Borrow<[u8]>,
+    Dll: DlmsDataLinkLayer<'i, I> + ?Sized,
   {
-    let (output, apdu) = self.decrypt_apdu(input)?;
+    let (output, apdu) = self.decrypt_apdu::<Dll, _>(input)?;
 
     let (_, obis) = ObisMap::parse(&apdu).map_err(|_| Error::InvalidFormat)?;
 
     Ok((output, obis))
   }
 
-  pub fn decrypt_apdu<I, O, F>(&self, input: I) -> Result<(O, Apdu), Error>
+  pub fn decrypt_apdu<'i, Dll, I>(&self, input: I) -> Result<(I, Apdu), Error>
   where
-    Dll: DlmsDataLinkLayer<I, O, F>,
-    F: Borrow<[u8]>,
+    Dll: DlmsDataLinkLayer<'i, I> + ?Sized,
   {
-    let (output, frame) = self.data_link_layer.next_frame(input)?;
+    let (output, frame) = Dll::next_frame(input)?;
     let (_, apdu) = map_nom_error(all_consuming(complete(|input| {
       Apdu::parse_encrypted(input, &self.key)
     }))(frame.borrow()))?;
