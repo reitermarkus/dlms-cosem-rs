@@ -1,16 +1,42 @@
-use alloc::borrow::{Cow, ToOwned};
-use hdlcparse::{
-  llc::{parse_llc, Llc},
-  type3::HdlcFrame,
-};
+use alloc::borrow::Cow;
+use hdlcparse::type3::HdlcFrame;
+use nom::{bytes::complete::tag, number::complete::u8, sequence::tuple};
 
 use crate::{DlmsDataLinkLayer, Error};
+
+enum MessageType {
+  Command,
+  Response,
+  Broadcast,
+}
+
+struct LlcHeader {
+  message_type: MessageType,
+  quality: u8,
+}
+
+pub fn parse_llc_header<'a>(input: &'a [u8]) -> Option<(&'a [u8], LlcHeader)> {
+  let (input, (_, src_lsap, quality)) = tuple::<_, _, (), _>((tag([0xE6]), u8, u8))(input).ok()?;
+  let message_type = match src_lsap {
+    0xE6 => MessageType::Command,
+    0xE7 => MessageType::Response,
+    0xFF => MessageType::Broadcast,
+    _ => None?,
+  };
+  Some((
+    input,
+    LlcHeader {
+      message_type,
+      quality,
+    },
+  ))
+}
 
 #[derive(Debug)]
 pub enum HdlcDataLinkLayer {}
 
-fn validate_llc(llc: Llc) -> bool {
-  llc.dest_sap == 0xE6 && (llc.src_sap == 0xE6 || llc.src_sap == 0xE7) && llc.control == 0x00
+fn validate_llc(llc: LlcHeader) -> bool {
+  llc.quality == 0x00
 }
 
 impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
@@ -21,7 +47,7 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;
-      let (information, llc) = parse_llc(information).ok_or(Error::Incomplete(None))?;
+      let (information, llc) = parse_llc_header(information).ok_or(Error::Incomplete(None))?;
       if validate_llc(llc) {
         Ok((&frames[1..], Cow::from(information)))
       } else {
