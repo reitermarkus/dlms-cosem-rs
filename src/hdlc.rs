@@ -1,43 +1,21 @@
 use alloc::borrow::Cow;
 use hdlcparse::type3::HdlcFrame;
-use nom::{bytes::complete::tag, number::complete::u8, sequence::tuple};
+use nom::{branch::alt, bytes::complete::tag, sequence::tuple};
 
 use crate::{DlmsDataLinkLayer, Error};
 
-enum MessageType {
-  Command,
-  Response,
-  Broadcast,
-}
-
-struct LlcHeader {
-  message_type: MessageType,
-  quality: u8,
-}
-
-pub fn parse_llc_header<'a>(input: &'a [u8]) -> Option<(&'a [u8], LlcHeader)> {
-  let (input, (_, src_lsap, quality)) = tuple::<_, _, (), _>((tag([0xE6]), u8, u8))(input).ok()?;
-  let message_type = match src_lsap {
-    0xE6 => MessageType::Command,
-    0xE7 => MessageType::Response,
-    0xFF => MessageType::Broadcast,
-    _ => None?,
-  };
-  Some((
-    input,
-    LlcHeader {
-      message_type,
-      quality,
-    },
-  ))
+fn parse_llc_header(input: &[u8]) -> Option<&[u8]> {
+  let (input, _) = tuple::<_, _, (), _>((
+    tag([0xE6]),
+    alt((tag([0xE6]), tag([0xE7]), tag([0xFF]))),
+    tag([0x00]),
+  ))(input)
+  .ok()?;
+  Some(input)
 }
 
 #[derive(Debug)]
 pub enum HdlcDataLinkLayer {}
-
-fn validate_llc(llc: LlcHeader) -> bool {
-  llc.quality == 0x00
-}
 
 impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
   fn next_frame(
@@ -47,19 +25,12 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;
-      let (information, llc) = parse_llc_header(information).ok_or(Error::Incomplete(None))?;
-      if validate_llc(llc) {
-        Ok((&frames[1..], Cow::from(information)))
-      } else {
-        Err(Error::InvalidFormat)
-      }
+      let information = parse_llc_header(information).ok_or(Error::InvalidFormat)?;
+      Ok((&frames[1..], Cow::from(information)))
     } else {
       let mut done = false;
       let mut len = 0;
-      let (information, llc) = parse_llc(frames[0].information).ok_or(Error::Incomplete(None))?;
-      if !validate_llc(llc) {
-        return Err(Error::InvalidFormat);
-      }
+      let information = parse_llc_header(frames[0].information).ok_or(Error::InvalidFormat)?;
       let mut information = information.to_owned();
       for frame in &frames[1..] {
         information.extend(frame.information);
