@@ -2,33 +2,29 @@
 #![deny(missing_debug_implementations)]
 
 extern crate alloc;
+use alloc::borrow::Cow;
 use alloc::collections::btree_map::BTreeMap;
-use alloc::vec::Vec;
 
-use core::num::NonZeroUsize;
+use core::borrow::Borrow;
 use core::convert::TryFrom;
-use core::ops::{Deref, DerefMut};
-use core::mem;
 use core::fmt;
+use core::mem;
+use core::num::NonZeroUsize;
+use core::ops::{Deref, DerefMut};
 
 use aes::Aes128;
 use cipher::Key;
 use nom::{
-  IResult,
-  Finish,
-  number::streaming::{u8},
-  multi::fold_many0,
-  combinator::{all_consuming, complete, fail},
-  sequence::tuple,
   branch::alt,
+  combinator::{all_consuming, complete, fail},
+  multi::fold_many0,
+  number::streaming::u8,
+  Finish, IResult,
 };
 #[cfg(feature = "serde")]
-use serde::{Serialize, Serializer, ser::SerializeMap};
-
-use mbusparse::Telegram;
+use serde::{ser::SerializeMap, Serialize, Serializer};
 
 mod control_information;
-use control_information::{HeaderType, ControlInformation};
 mod data;
 pub use data::*;
 mod data_notification;
@@ -41,6 +37,10 @@ mod security_control;
 pub use security_control::SecurityControl;
 mod unit;
 pub use unit::Unit;
+#[cfg(feature = "hdlcparse")]
+pub mod hdlc;
+#[cfg(feature = "mbusparse")]
+pub mod mbus;
 
 #[derive(Debug, Clone)]
 pub enum Error {
@@ -74,66 +74,13 @@ impl<I> nom::error::ParseError<I> for Error {
   }
 }
 
+pub trait DlmsDataLinkLayer<'i, I> {
+  fn next_frame(input: I) -> Result<(I, Cow<'i, [u8]>), Error>;
+}
+
 #[derive(Debug)]
 pub struct Dlms {
   key: Key<Aes128>,
-}
-
-/// Parse an `Apdu` from an unsegmented or multiple segmented M-Bus `Telegram`s.
-fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &Key<Aes128>) -> IResult<&'i [Telegram<'i>], Apdu, Error> {
-  let mut payload = Vec::new();
-  let mut current_segment = 0;
-  let mut len = 0;
-
-  for telegram in input {
-    match telegram {
-      Telegram::LongFrame { control_information, user_data, .. } => {
-        use nom::number::complete::u8;
-
-        let user_data: &[u8] = *user_data;
-
-        let control_information = ControlInformation::try_from(*control_information)
-          .map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
-
-        let (user_data, last_segment) = match control_information {
-          ControlInformation::Segmented { segment, last_segment } => {
-            if current_segment != segment {
-              return Err(nom::Err::Failure(Error::ChecksumMismatch))
-            }
-            current_segment = current_segment.wrapping_add(1);
-
-            (user_data, last_segment)
-          },
-          ControlInformation::Unsegmented { header, .. } => {
-            let (user_data, _ala) = if header == HeaderType::Long {
-              let (user_data, (m_id, ver, dt)) = tuple((u8, u8, u8))(user_data)?;
-              (user_data, Some((m_id, ver, dt)))
-            } else {
-              (user_data, None)
-            };
-
-            let (user_data, (_acc, _sts, _cfg)) = tuple((u8, u8, u8))(user_data)?;
-
-            (user_data, true)
-          }
-        };
-
-        let (user_data, (_stsap, _dtsap)) = tuple((u8, u8))(user_data)?;
-
-        payload.extend(user_data);
-        len += 1;
-
-        if last_segment {
-          let (_, apdu) = all_consuming(complete(|input| Apdu::parse_encrypted(input, key)))(&payload)?;
-
-          return Ok((&input[len..], apdu))
-        }
-      },
-      _ => return Err(nom::Err::Failure(Error::InvalidFormat)),
-    }
-  }
-
-  Err(nom::Err::Incomplete(nom::Needed::Unknown))
 }
 
 impl Dlms {
@@ -141,20 +88,40 @@ impl Dlms {
     Dlms { key: key.into() }
   }
 
-  pub fn decrypt<'i>(&self, input: &'i [Telegram<'i>]) -> Result<(&'i [Telegram<'i>], ObisMap), Error> {
-    let (input, apdu) = parse_mbus(input, &self.key).map_err(|err| match err {
+  pub fn decrypt<'i, Dll, I>(&self, input: I) -> Result<(I, ObisMap), Error>
+  where
+    Dll: DlmsDataLinkLayer<'i, I> + ?Sized,
+  {
+    let (output, apdu) = self.decrypt_apdu::<Dll, _>(input)?;
+
+    let (_, obis) = ObisMap::parse(&apdu).map_err(|_| Error::InvalidFormat)?;
+
+    Ok((output, obis))
+  }
+
+  pub fn decrypt_apdu<'i, Dll, I>(&self, input: I) -> Result<(I, Apdu), Error>
+  where
+    Dll: DlmsDataLinkLayer<'i, I> + ?Sized,
+  {
+    let (output, frame) = Dll::next_frame(input)?;
+    let (_, apdu) = map_nom_error(all_consuming(complete(|input| {
+      Apdu::parse_encrypted(input, &self.key)
+    }))(frame.borrow()))?;
+
+    Ok((output, apdu))
+  }
+}
+
+fn map_nom_error<I, O>(result: IResult<I, O, Error>) -> Result<(I, O), Error> {
+  result
+    .map_err(|err| match err {
       nom::Err::Incomplete(needed) => nom::Err::Failure(Error::Incomplete(match needed {
         nom::Needed::Unknown => None,
-        nom::Needed::Size(size) => Some(size)
+        nom::Needed::Size(size) => Some(size),
       })),
-      err => err
-    }).finish()?;
-
-    let (_, obis) = ObisMap::parse(&apdu)
-      .map_err(|_| Error::InvalidFormat)?;
-
-    Ok((input, obis))
-  }
+      err => err,
+    })
+    .finish()
 }
 
 #[derive(Debug, Clone, PartialEq)]
