@@ -96,6 +96,10 @@ impl DataNotification {
     self.long_invoke_id_and_priority.invoke_id()
   }
 
+  pub fn body(&self) -> &Data {
+    &self.notification_body
+  }
+
   pub fn parse(input: &[u8]) -> IResult<&[u8], Self> {
     let (input, long_invoke_id_and_priority) = LongInvokeIdAndPriority::parse(input)?;
     let (input, date_time) = length_value(u8, DateTime::parse)(input)?;
