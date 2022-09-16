@@ -55,18 +55,11 @@ impl GeneralGloCiphering {
     // Green Book 9.2.7.2.4.1
     let (input, security_control) = SecurityControl::parse(input)?;
 
-    let (input, invocation_counter) = cond(
-      security_control.authentication() || security_control.encryption(),
-      be_u32,
-    )(input)?;
+    let (input, invocation_counter) =
+      cond(security_control.authentication() || security_control.encryption(), be_u32)(input)?;
 
     let (input, payload) = count(u8, payload_len)(input)?;
 
-    Ok((input, Self {
-      system_title,
-      security_control,
-      invocation_counter,
-      payload,
-    }))
+    Ok((input, Self { system_title, security_control, invocation_counter, payload }))
   }
 }

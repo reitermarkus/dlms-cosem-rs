@@ -91,8 +91,8 @@ fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &Key<Aes128>) -> IResult<&'i [
 
         let user_data: &[u8] = *user_data;
 
-        let control_information = ControlInformation::try_from(*control_information)
-          .map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
+        let control_information =
+          ControlInformation::try_from(*control_information).map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
 
         let (user_data, last_segment) = match control_information {
           ControlInformation::Segmented { segment, last_segment } => {
@@ -141,16 +141,17 @@ impl Dlms {
   }
 
   pub fn decrypt<'i>(&self, input: &'i [Telegram<'i>]) -> Result<(&'i [Telegram<'i>], ObisMap), Error> {
-    let (input, apdu) = parse_mbus(input, &self.key).map_err(|err| match err {
-      nom::Err::Incomplete(needed) => nom::Err::Failure(Error::Incomplete(match needed {
-        nom::Needed::Unknown => None,
-        nom::Needed::Size(size) => Some(size)
-      })),
-      err => err
-    }).finish()?;
+    let (input, apdu) = parse_mbus(input, &self.key)
+      .map_err(|err| match err {
+        nom::Err::Incomplete(needed) => nom::Err::Failure(Error::Incomplete(match needed {
+          nom::Needed::Unknown => None,
+          nom::Needed::Size(size) => Some(size),
+        })),
+        err => err,
+      })
+      .finish()?;
 
-    let (_, obis) = ObisMap::parse(&apdu)
-      .map_err(|_| Error::InvalidFormat)?;
+    let (_, obis) = ObisMap::parse(&apdu).map_err(|_| Error::InvalidFormat)?;
 
     Ok((input, obis))
   }
@@ -169,11 +170,10 @@ impl Apdu {
 
     let apdu = match apdu {
       Apdu::GeneralGloCiphering(ciphering) => {
-        let payload = ciphering.decrypt(key)
-          .map_err(|_| nom::Err::Failure(Error::DecryptionFailed))?;
+        let payload = ciphering.decrypt(key).map_err(|_| nom::Err::Failure(Error::DecryptionFailed))?;
 
-        let (_, apdu) = all_consuming(complete(Apdu::parse))(&payload)
-          .map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
+        let (_, apdu) =
+          all_consuming(complete(Apdu::parse))(&payload).map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
         apdu
       },
       apdu => apdu,
@@ -223,8 +223,7 @@ impl Register {
     if let Some(data) = input.get(0) {
       match data {
         Data::OctetString(obis_code) => {
-          let (_, code) = all_consuming(ObisCode::parse)(obis_code)
-            .map_err(|e| e.map_input(|_| input))?;
+          let (_, code) = all_consuming(ObisCode::parse)(obis_code).map_err(|e| e.map_input(|_| input))?;
           Ok((&input[1..], code))
         },
         _ => fail(input),
@@ -352,14 +351,11 @@ impl ObisMap {
       _ => return fail(()),
     };
 
-    let (_, values) = all_consuming(fold_many0(
-      Register::parse,
-      BTreeMap::new,
-      |mut values, reg| {
-        values.insert(reg.obis_code.clone(), reg);
-        values
-      }
-    ))(data).map_err(|e| e.map_input(|_| ()))?;
+    let (_, values) = all_consuming(fold_many0(Register::parse, BTreeMap::new, |mut values, reg| {
+      values.insert(reg.obis_code.clone(), reg);
+      values
+    }))(data)
+    .map_err(|e| e.map_input(|_| ()))?;
 
     Ok(((), Self { map: values }))
   }
@@ -380,11 +376,7 @@ impl Serialize for ObisMap {
 
     let mut map = serializer.serialize_map(Some(self.map.len()))?;
     for (k, v) in self.map.iter() {
-
-        map.serialize_entry(k, &Entry {
-          value: v.value(),
-          unit: v.unit().and_then(|u| u.as_str()),
-        })?;
+      map.serialize_entry(k, &Entry { value: v.value(), unit: v.unit().and_then(|u| u.as_str()) })?;
     }
     map.end()
   }
@@ -398,6 +390,7 @@ mod test {
 
   #[test]
   fn parse_apdu() {
+    #[rustfmt::skip]
     let payload: [u8; 72] = [
       // APDU
       0x0F, // Type (Data Notification)
@@ -447,47 +440,30 @@ mod test {
 
     assert_eq!(
       Apdu::parse(&payload).unwrap().1,
-      Apdu::DataNotification(
-        DataNotification {
-          long_invoke_id_and_priority: LongInvokeIdAndPriority(21817),
-          date_time: DateTime {
-            date: Date {
-              year: 2016,
-              month: 9,
-              day_of_month: 8,
-              day_of_week: 4,
-            },
-            time: Time {
-              hour: Some(19),
-              minute: Some(13),
-              second: Some(25),
-              hundredth: Some(0),
-            },
-            offset_minutes: Some(-60),
-            clock_status: Some(ClockStatus(128)),
-          },
-          notification_body: Data::Structure(vec![
-            Data::OctetString(vec![7, 224, 9, 8, 4, 19, 13, 25, 0, 0, 0, 128]),
-            Data::OctetString(vec![1, 0, 1, 8, 0, 255]),
-            Data::DoubleLongUnsigned(0),
-            Data::Structure(vec![
-              Data::Integer(0),
-              Data::Enum(30),
-            ]),
-            Data::OctetString(vec![1, 0, 3, 8, 0, 255]),
-            Data::DoubleLongUnsigned(0),
-            Data::Structure(vec![
-              Data::Integer(0),
-              Data::Enum(32),
-            ]),
-          ]),
+      Apdu::DataNotification(DataNotification {
+        long_invoke_id_and_priority: LongInvokeIdAndPriority(21817),
+        date_time: DateTime {
+          date: Date { year: 2016, month: 9, day_of_month: 8, day_of_week: 4 },
+          time: Time { hour: Some(19), minute: Some(13), second: Some(25), hundredth: Some(0) },
+          offset_minutes: Some(-60),
+          clock_status: Some(ClockStatus(128)),
         },
-      ),
+        notification_body: Data::Structure(vec![
+          Data::OctetString(vec![7, 224, 9, 8, 4, 19, 13, 25, 0, 0, 0, 128]),
+          Data::OctetString(vec![1, 0, 1, 8, 0, 255]),
+          Data::DoubleLongUnsigned(0),
+          Data::Structure(vec![Data::Integer(0), Data::Enum(30),]),
+          Data::OctetString(vec![1, 0, 3, 8, 0, 255]),
+          Data::DoubleLongUnsigned(0),
+          Data::Structure(vec![Data::Integer(0), Data::Enum(32),]),
+        ]),
+      },),
     );
   }
 
   const KEY: [u8; 16] = 0xdeafbeefcafebabedeafbeefcafebabeu128.to_be_bytes();
 
+  #[rustfmt::skip]
   const ENCRYPTED_MESSAGE: [u8; 354] = [
     0xdb, // Tag
     0x08, 0x4b, 0x46, 0x4d, 0x10, 0x20, 0x01, 0x12, 0xa9, // System Title
@@ -517,6 +493,7 @@ mod test {
     0x43, 0x9c, 0xe6, 0x46, 0x27, 0x53, 0x92, 0xf6, 0x0b, 0x3b, 0x69, 0x90, 0x3f, 0x82, 0x84, 0x78,
   ];
 
+  #[rustfmt::skip]
   const DECRYPTED_MESSAGE: [u8; 336] = [
     0x0f, 0x00, 0x02, 0xb5, 0xe4, 0x0c, 0x07, 0xe5, 0x09, 0x0b, 0x06, 0x09, 0x0d, 0x14, 0x00, 0xff,
     0x88, 0x80, 0x02, 0x10, 0x09, 0x06, 0x00, 0x00, 0x01, 0x00, 0x00, 0xff, 0x09, 0x0c, 0x07, 0xe5,
