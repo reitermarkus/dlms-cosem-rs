@@ -23,7 +23,7 @@ impl TryFrom<u8> for ControlInformation {
   type Error = u8;
 
   fn try_from(control_information: u8) -> Result<Self, Self::Error> {
-    use {HeaderType::*, Direction::*};
+    use {Direction::*, HeaderType::*};
 
     Ok(match control_information {
       0x00..=0x1f => {

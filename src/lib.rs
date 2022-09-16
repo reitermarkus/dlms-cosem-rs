@@ -5,30 +5,29 @@ extern crate alloc;
 use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
 
-use core::num::NonZeroUsize;
 use core::convert::TryFrom;
-use core::ops::{Deref, DerefMut};
-use core::mem;
 use core::fmt;
+use core::mem;
+use core::num::NonZeroUsize;
+use core::ops::{Deref, DerefMut};
 
 use aes::Aes128;
 use cipher::Key;
 use nom::{
-  IResult,
-  Finish,
-  number::streaming::{u8},
-  multi::fold_many0,
-  combinator::{all_consuming, complete, fail},
-  sequence::tuple,
   branch::alt,
+  combinator::{all_consuming, complete, fail},
+  multi::fold_many0,
+  number::streaming::u8,
+  sequence::tuple,
+  Finish, IResult,
 };
 #[cfg(feature = "serde")]
-use serde::{Serialize, Serializer, ser::SerializeMap};
+use serde::{ser::SerializeMap, Serialize, Serializer};
 
 use mbusparse::Telegram;
 
 mod control_information;
-use control_information::{HeaderType, ControlInformation};
+use control_information::{ControlInformation, HeaderType};
 mod data;
 pub use data::*;
 mod data_notification;
@@ -115,7 +114,7 @@ fn parse_mbus<'i>(input: &'i [Telegram<'i>], key: &Key<Aes128>) -> IResult<&'i [
             let (user_data, (_acc, _sts, _cfg)) = tuple((u8, u8, u8))(user_data)?;
 
             (user_data, true)
-          }
+          },
         };
 
         let (user_data, (_stsap, _dtsap)) = tuple((u8, u8))(user_data)?;
@@ -289,7 +288,7 @@ impl Register {
           } else {
             $value as $ty * factor as $ty
           }
-        }}
+        }};
       }
 
       value = match value {
@@ -315,7 +314,7 @@ impl Register {
     let (input, (obis_code, value, unit)) =
       alt((complete(Self::parse_inner), complete(Self::parse_inner_nested)))(input)?;
 
-      Ok((input, Self { obis_code, value, unit }))
+    Ok((input, Self { obis_code, value, unit }))
   }
 }
 
@@ -328,13 +327,13 @@ impl Deref for ObisMap {
   type Target = BTreeMap<ObisCode, Register>;
 
   fn deref(&self) -> &Self::Target {
-      &self.map
+    &self.map
   }
 }
 
 impl DerefMut for ObisMap {
   fn deref_mut(&mut self) -> &mut Self::Target {
-      &mut self.map
+    &mut self.map
   }
 }
 
@@ -350,7 +349,7 @@ impl ObisMap {
   pub fn parse(input: &Apdu) -> IResult<(), Self> {
     let data = match input {
       Apdu::DataNotification(DataNotification { notification_body: Data::Structure(data), .. }) => data.as_slice(),
-      _ => return fail(())
+      _ => return fail(()),
     };
 
     let (_, values) = all_consuming(fold_many0(
@@ -370,13 +369,13 @@ impl ObisMap {
 impl Serialize for ObisMap {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
   where
-      S: Serializer,
+    S: Serializer,
   {
     #[derive(Serialize)]
     struct Entry<'a> {
       value: &'a Data,
       #[serde(skip_serializing_if = "Option::is_none")]
-      unit: Option<&'a str>
+      unit: Option<&'a str>,
     }
 
     let mut map = serializer.serialize_map(Some(self.map.len()))?;

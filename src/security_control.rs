@@ -1,10 +1,10 @@
 use core::fmt;
 
-use nom::{IResult, number::complete::u8};
+use nom::{number::complete::u8, IResult};
 
 #[derive(Clone, PartialEq)]
 pub struct SecurityControl {
-  security_control: u8
+  security_control: u8,
 }
 
 impl fmt::Debug for SecurityControl {
@@ -20,9 +20,13 @@ impl fmt::Debug for SecurityControl {
 }
 
 impl SecurityControl {
-  const COMPRESSION_BIT: u8 =    0b10000000;
-  const BROADCAST_BIT: u8 =      0b01000000;
-  const ENCRYPTION_BIT: u8 =     0b00100000;
+  #[rustfmt::skip]
+  const COMPRESSION_BIT:    u8 = 0b10000000;
+  #[rustfmt::skip]
+  const BROADCAST_BIT:      u8 = 0b01000000;
+  #[rustfmt::skip]
+  const ENCRYPTION_BIT:     u8 = 0b00100000;
+  #[rustfmt::skip]
   const AUTHENTICATION_BIT: u8 = 0b00010000;
 
   pub fn parse(input: &[u8]) -> IResult<&[u8], Self> {

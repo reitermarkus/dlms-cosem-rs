@@ -1,15 +1,15 @@
 use alloc::vec::Vec;
 
 use aes::Aes128;
+use aes_gcm::aead::{AeadInPlace, NewAead};
 use aes_gcm::Aes128Gcm;
-use aes_gcm::aead::{NewAead, AeadInPlace};
 use cipher::Key;
 use nom::{
-  IResult,
   bytes::streaming::tag,
-  number::streaming::{u8, be_u16, be_u32},
-  multi::{count, fill},
   combinator::cond,
+  multi::{count, fill},
+  number::streaming::{be_u16, be_u32, u8},
+  IResult,
 };
 
 use crate::SecurityControl;
