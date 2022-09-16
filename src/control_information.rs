@@ -32,9 +32,9 @@ impl TryFrom<u8> for ControlInformation {
 
         Self::Segmented { segment, last_segment }
       },
-      0x60 => Self::Unsegmented { header: Long,  direction: MasterSlave },
+      0x60 => Self::Unsegmented { header: Long, direction: MasterSlave },
       0x61 => Self::Unsegmented { header: Short, direction: MasterSlave },
-      0x7c => Self::Unsegmented { header: Long,  direction: SlaveMaster },
+      0x7c => Self::Unsegmented { header: Long, direction: SlaveMaster },
       0x7d => Self::Unsegmented { header: Short, direction: SlaveMaster },
       _ => return Err(control_information),
     })

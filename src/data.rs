@@ -16,6 +16,7 @@ use serde::{Serialize, Serializer};
 
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
+#[rustfmt::skip]
 pub enum DataType {
   Null               =  0,
   Array              =  1,
@@ -92,12 +93,7 @@ impl Date {
     let (input, day_of_month) = u8(input)?;
     let (input, day_of_week) = u8(input)?;
 
-    Ok((input, Self {
-      year,
-      month,
-      day_of_month,
-      day_of_week,
-    }))
+    Ok((input, Self { year, month, day_of_month, day_of_week }))
   }
 }
 
