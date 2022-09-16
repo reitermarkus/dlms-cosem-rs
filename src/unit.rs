@@ -4,7 +4,7 @@ use derive_try_from_primitive::TryFromPrimitive;
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
 
-#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 #[non_exhaustive]
 #[rustfmt::skip]

@@ -2,7 +2,7 @@ use core::fmt;
 
 use nom::{number::complete::u8, IResult};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SecurityControl {
   security_control: u8,
 }

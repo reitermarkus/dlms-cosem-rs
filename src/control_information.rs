@@ -1,12 +1,12 @@
 use core::convert::TryFrom;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HeaderType {
   Short,
   Long,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Direction {
   MasterSlave,
   SlaveMaster,
