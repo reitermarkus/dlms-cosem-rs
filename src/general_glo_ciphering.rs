@@ -14,7 +14,7 @@ use nom::{
 
 use crate::SecurityControl;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GeneralGloCiphering {
   system_title: [u8; 8],
   security_control: SecurityControl,

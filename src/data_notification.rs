@@ -6,7 +6,7 @@ use nom::{
 
 use crate::{Data, DateTime};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LongInvokeIdAndPriority(pub(crate) u32);
 
 impl LongInvokeIdAndPriority {
@@ -16,19 +16,19 @@ impl LongInvokeIdAndPriority {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Priority {
   Normal,
   High,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ServiceClass {
   Confirmed,
   Unconfirmed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessingOption {
   ContinueOnError,
   BreakOnError,

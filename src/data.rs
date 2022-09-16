@@ -14,7 +14,7 @@ use nom::{
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 #[rustfmt::skip]
 pub enum DataType {
@@ -78,7 +78,7 @@ impl TryFrom<u8> for DataType {
   }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Date {
   pub(crate) year: u16,
   pub(crate) month: u8,
@@ -119,7 +119,7 @@ impl Serialize for Date {
   }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Time {
   pub(crate) hour: Option<u8>,
   pub(crate) minute: Option<u8>,
@@ -185,7 +185,7 @@ impl Serialize for Time {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct ClockStatus(pub(crate) u8);
 
@@ -222,7 +222,7 @@ impl ClockStatus {
   }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct DateTime {
   pub(crate) date: Date,
   pub(crate) time: Time,
