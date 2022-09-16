@@ -1,10 +1,10 @@
 use nom::{
-  IResult,
-  number::streaming::{u8, be_u32},
   multi::length_value,
+  number::streaming::{be_u32, u8},
+  IResult,
 };
 
-use crate::{DateTime, Data};
+use crate::{Data, DateTime};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LongInvokeIdAndPriority(pub(crate) u32);

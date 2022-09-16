@@ -1,15 +1,15 @@
-use core::convert::TryFrom;
-use core::fmt;
-use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use alloc::string::ToString;
+use alloc::{string::String, vec::Vec};
+use core::convert::TryFrom;
+use core::fmt;
 
 use nom::{
-  IResult,
   combinator::fail,
-  number::streaming::{be_f32, be_f64, i8, be_i16, be_i32, be_i64, u8, be_u16, be_u32, be_u64},
-  multi::{length_count},
-  sequence::{tuple},
+  multi::length_count,
+  number::streaming::{be_f32, be_f64, be_i16, be_i32, be_i64, be_u16, be_u32, be_u64, i8, u8},
+  sequence::tuple,
+  IResult,
 };
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
@@ -54,11 +54,11 @@ impl TryFrom<u8> for DataType {
       0x03 => Self::Bool,
       0x04 => Self::BitString,
       0x05 => Self::DoubleLong,
-      0x06 => Self::DoubleLongUnsigned ,
+      0x06 => Self::DoubleLongUnsigned,
       0x09 => Self::OctetString,
       0x0a => Self::VisibleString,
       0x0c => Self::Utf8String,
-      0x0d => Self::BinaryCodedDecimal ,
+      0x0d => Self::BinaryCodedDecimal,
       0x0f => Self::Integer,
       0x10 => Self::Long,
       0x11 => Self::Unsigned,
@@ -115,12 +115,12 @@ impl fmt::Debug for Date {
 
 #[cfg(feature = "serde")]
 impl Serialize for Date {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_str(&self.to_string())
+  }
 }
 
 #[derive(Clone, PartialEq)]
@@ -162,7 +162,9 @@ impl Time {
 
 impl fmt::Display for Time {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:02}:{:02}:{:02}.{:02}",
+    write!(
+      f,
+      "{:02}:{:02}:{:02}.{:02}",
       self.hour.unwrap_or(0),
       self.minute.unwrap_or(0),
       self.second.unwrap_or(0),
@@ -179,12 +181,12 @@ impl fmt::Debug for Time {
 
 #[cfg(feature = "serde")]
 impl Serialize for Time {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_str(&self.to_string())
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -192,10 +194,15 @@ impl Serialize for Time {
 pub struct ClockStatus(pub(crate) u8);
 
 impl ClockStatus {
+  #[rustfmt::skip]
   const INVALID_VALUE_BIT:   u8 = 0b00000001;
+  #[rustfmt::skip]
   const DOUBTFUL_VALUE_BIT:  u8 = 0b00000010;
+  #[rustfmt::skip]
   const DIFFERENT_BASE_BIT:  u8 = 0b00000100;
+  #[rustfmt::skip]
   const INVALID_STATUS_BIT:  u8 = 0b00001000;
+  #[rustfmt::skip]
   const DAYLIGHT_SAVING_BIT: u8 = 0b10000000;
 
   pub fn invalid_value(&self) -> bool {
@@ -266,12 +273,12 @@ impl fmt::Debug for DateTime {
 
 #[cfg(feature = "serde")]
 impl Serialize for DateTime {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_str(&self.to_string())
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize))]

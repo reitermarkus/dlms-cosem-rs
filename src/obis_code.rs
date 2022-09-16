@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 use alloc::string::ToString;
 
-use nom::{IResult, sequence::tuple, number::complete::u8};
+use nom::{number::complete::u8, sequence::tuple, IResult};
 #[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
 
@@ -42,10 +42,10 @@ impl fmt::Debug for ObisCode {
 
 #[cfg(feature = "serde")]
 impl Serialize for ObisCode {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_str(&self.to_string())
+  }
 }
