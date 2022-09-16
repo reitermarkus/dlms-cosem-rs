@@ -20,20 +20,21 @@ struct LlcHeader {
   quality: u8,
 }
 
-fn parse_llc_header(input: &[u8]) -> Option<(&[u8], LlcHeader)> {
-  let (input, (dest_lsap, src_lsap, quality)) = tuple::<_, _, (), _>((u8, u8, u8))(input).ok()?;
+fn parse_llc_header(input: &[u8]) -> Result<(&[u8], LlcHeader), Error> {
+  let (input, (dest_lsap, src_lsap, quality)) =
+    tuple::<_, _, (), _>((u8, u8, u8))(input).map_err(|_| Error::InvalidFormat)?;
   let destination = match dest_lsap {
     0xE6 => Destination::Unicast,
     0xFF => Destination::Broadcast,
-    _ => return None,
+    _ => return Err(Error::InvalidFormat),
   };
   let message_type = match src_lsap {
     0xE6 => MessageType::Command,
     0xE7 => MessageType::Response,
-    _ => return None,
+    _ => return Err(Error::InvalidFormat),
   };
 
-  Some((
+  Ok((
     input,
     LlcHeader {
       destination,
@@ -64,7 +65,7 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;
-      let (information, llc_header) = parse_llc_header(information).ok_or(Error::InvalidFormat)?;
+      let (information, llc_header) = parse_llc_header(information)?;
       if validate_llc_header(&llc_header) {
         Ok((&frames[1..], Cow::from(information)))
       } else {
@@ -73,8 +74,7 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
     } else {
       let mut done = false;
       let mut len = 0;
-      let (information, llc_header) =
-        parse_llc_header(frames[0].information).ok_or(Error::InvalidFormat)?;
+      let (information, llc_header) = parse_llc_header(frames[0].information)?;
       if !validate_llc_header(&llc_header) {
         return Err(Error::InvalidFormat);
       }
