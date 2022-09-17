@@ -37,29 +37,20 @@ fn parse_llc_header(input: &[u8]) -> Result<(&[u8], LlcHeader), Error> {
     _ => return Err(Error::InvalidFormat),
   };
 
-  Ok((
-    input,
-    LlcHeader {
-      destination,
-      message_type,
-      quality,
-    },
-  ))
+  Ok((input, LlcHeader { destination, message_type, quality }))
 }
 
 #[derive(Debug)]
 pub enum HdlcDataLinkLayer {}
 
 impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
-  fn next_frame(
-    frames: &'f [HdlcFrame<'i>],
-  ) -> Result<(&'f [HdlcFrame<'i>], Cow<'i, [u8]>), Error> {
+  fn next_frame(frames: &'f [HdlcFrame<'i>]) -> Result<(&'f [HdlcFrame<'i>], Cow<'i, [u8]>), Error> {
     if frames.is_empty() {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;
       let (information, _) = parse_llc_header(information)?;
-        Ok((&frames[1..], Cow::from(information)))
+      Ok((&frames[1..], Cow::from(information)))
     } else {
       let mut done = false;
       let mut len = 0;
@@ -70,7 +61,7 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
         len += 1;
         if !frame.segmented {
           done = true;
-          break;
+          break
         }
       }
       if done {
