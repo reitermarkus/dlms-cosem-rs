@@ -14,6 +14,7 @@ enum MessageType {
   Response,
 }
 
+#[allow(unused)]
 struct LlcHeader {
   destination: Destination,
   message_type: MessageType,

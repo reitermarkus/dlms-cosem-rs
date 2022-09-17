@@ -22,7 +22,7 @@ fn parse_mbus<'i, 'f>(input: &'f [Telegram<'i>]) -> IResult<&'f [Telegram<'i>], 
       Telegram::LongFrame { control_information, user_data, .. } => {
         use nom::number::complete::u8;
 
-        let user_data: &[u8] = *user_data;
+        let user_data: &[u8] = user_data;
 
         let control_information =
           ControlInformation::try_from(*control_information).map_err(|_| nom::Err::Failure(Error::InvalidFormat))?;
