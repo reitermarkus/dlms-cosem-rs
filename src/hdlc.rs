@@ -23,6 +23,9 @@ struct LlcHeader {
 fn parse_llc_header(input: &[u8]) -> Result<(&[u8], LlcHeader), Error> {
   let (input, (dest_lsap, src_lsap, quality)) =
     tuple::<_, _, (), _>((u8, u8, u8))(input).map_err(|_| Error::InvalidFormat)?;
+  if quality != 0x00 {
+    return Err(Error::InvalidFormat)
+  }
   let destination = match dest_lsap {
     0xE6 => Destination::Unicast,
     0xFF => Destination::Broadcast,
@@ -44,16 +47,6 @@ fn parse_llc_header(input: &[u8]) -> Result<(&[u8], LlcHeader), Error> {
   ))
 }
 
-fn validate_llc_header(llc: &LlcHeader) -> bool {
-  llc.quality == 0x00
-    && match llc.destination {
-      Destination::Unicast | Destination::Broadcast => true,
-    }
-    && match llc.message_type {
-      MessageType::Command | MessageType::Response => true,
-    }
-}
-
 #[derive(Debug)]
 pub enum HdlcDataLinkLayer {}
 
@@ -65,19 +58,12 @@ impl<'i, 'f> DlmsDataLinkLayer<'i, &'f [HdlcFrame<'i>]> for HdlcDataLinkLayer {
       Err(Error::Incomplete(None))
     } else if !frames[0].segmented {
       let information = frames[0].information;
-      let (information, llc_header) = parse_llc_header(information)?;
-      if validate_llc_header(&llc_header) {
+      let (information, _) = parse_llc_header(information)?;
         Ok((&frames[1..], Cow::from(information)))
-      } else {
-        Err(Error::InvalidFormat)
-      }
     } else {
       let mut done = false;
       let mut len = 0;
-      let (information, llc_header) = parse_llc_header(frames[0].information)?;
-      if !validate_llc_header(&llc_header) {
-        return Err(Error::InvalidFormat);
-      }
+      let (information, _) = parse_llc_header(frames[0].information)?;
       let mut information = information.to_owned();
       for frame in &frames[1..] {
         information.extend(frame.information);
