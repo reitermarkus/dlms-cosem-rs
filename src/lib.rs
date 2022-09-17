@@ -104,9 +104,8 @@ impl Dlms {
     Dll: DlmsDataLinkLayer<'i, I> + ?Sized,
   {
     let (output, frame) = Dll::next_frame(input)?;
-    let (_, apdu) = map_nom_error(all_consuming(complete(|input| {
-      Apdu::parse_encrypted(input, &self.key)
-    }))(frame.borrow()))?;
+    let (_, apdu) =
+      map_nom_error(all_consuming(complete(|input| Apdu::parse_encrypted(input, &self.key)))(frame.borrow()))?;
 
     Ok((output, apdu))
   }
